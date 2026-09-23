@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wind Turbine Digital Twin</title>
+<meta name="description" content="A physics-based digital twin of the NREL 5 MW reference wind turbine: live 3D model, turbulent wind, control, drivetrain and tower physics, fault detection and the value a digital-twin ecosystem creates.">
+
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap bar">
+    <a class="brand" href="#top"><span class="logo" aria-hidden="true"></span>Wind Turbine Digital Twin</a>
+    <nav>
+      <a href="#live">Live twin</a><a href="#evidence">Evidence</a><a href="#ecosystem">Ecosystem</a><a href="#value">Value</a><a href="#method">Method</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero wrap" id="top">
+  <div class="eyebrow">Digital twin prototype · physics-based simulation</div>
+  <h1>The turbine, its digital twin, and the value in between</h1>
+  <p class="lede">A 126-metre rotor spins in turbulent wind next to its virtual copy. The twin computes, from physics, what the turbine <em>should</em> be doing. The gap between expected and measured behaviour exposes a failing bearing weeks early, finds energy lost to a misaligned nacelle, keeps an iced rotor producing and stretches the tower's fatigue life.</p>
+  <div class="badges">
+    <span class="badge">NREL 5 MW reference turbine</span><span class="badge">Aerodynamics · control · drivetrain · tower</span><span class="badge">10-minute SCADA + vibration</span>
+    <span class="badge note">Simulated asset and data</span>
+  </div>
+</section>
+
+<!-- LIVE TWIN -->
+<section id="live" class="wrap live">
+  <div class="viewport-card">
+    <div id="viewport" class="viewport">
+      <div class="vp-top">
+        <div class="seg" id="modeSeg" role="group" aria-label="View">
+          <button data-mode="physical">Physical</button><button data-mode="split" class="on">Side by side</button><button data-mode="twin">Digital twin</button>
+        </div>
+        <div class="seg small" id="camSeg" role="group" aria-label="Camera">
+          <button data-cam="overview">Overview</button><button data-cam="nacelle">Nacelle</button><button data-cam="rotor">Rotor</button><button data-cam="ground">Ground</button><button data-cam="farm">Wind farm</button>
+        </div>
+      </div>
+      <div class="vp-tag left" id="tagPhys">PHYSICAL ASSET</div>
+      <div class="vp-tag right" id="tagTwin">DIGITAL TWIN</div>
+      <div class="vp-bottom">
+        <label class="chk"><input type="checkbox" id="flowChk" checked> Wind flow</label>
+        <label class="chk"><input type="checkbox" id="exagChk" checked> Tower sway ×15</label>
+        <span class="legend-heat">Load <i></i> low → high</span>
+      </div>
+      <div class="vp-hint">Drag to orbit · scroll to zoom</div>
+    </div>
+    <div class="timeline">
+      <button id="playBtn" class="icon" aria-label="Pause">❚❚</button>
+      <div class="seg small" id="speedSeg" role="group" aria-label="Simulation speed">
+        <button data-speed="6">1 h/s</button><button data-speed="36">6 h/s</button><button data-speed="144">1 day/s</button>
+      </div>
+      <div class="clock"><span id="clockDay">Day 0</span><span id="clockTime">00:00</span></div>
+      <div class="region" id="regionTxt">region 2</div>
+      <label class="chk slow"><input type="checkbox" id="slowChk" checked> Slow down on alerts</label>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div class="readouts" id="readouts"></div>
+    <div class="scen">
+      <div class="kicker">Inject a real-world problem</div>
+      <div class="scen-grid">
+        <div class="scen-card" data-scen="bearing">
+          <div><b>Gearbox bearing wear</b><span>High-speed-shaft bearing starts to fail. Can the twin see it before it breaks?</span></div>
+          <button>Inject</button>
+        </div>
+        <div class="scen-card" data-scen="yaw">
+          <div><b>Yaw misalignment 8°</b><span>Wind vane mounted slightly off after a repair. Invisible to the eye, costly over a year.</span></div>
+          <button>Inject</button>
+        </div>
+        <div class="scen-card" data-scen="icing">
+          <div><b>Blade icing</b><span>Four days of freezing fog. Stop the turbine, or let the twin keep it running?</span></div>
+          <button>Inject</button>
+        </div>
+        <div class="scen-card" data-scen="wake">
+          <div><b>Tower fatigue in a wake</b><span>A new neighbour upwind raises turbulence. How fast is the tower's life being used?</span></div>
+          <button>Inject</button>
+        </div>
+      </div>
+      <button class="link-btn" id="resetBtn">Reset simulation</button>
+    </div>
+    <div class="log">
+      <div class="kicker">Twin event log</div>
+      <ol id="log"><li class="muted">Normal operation. The twin compares every 10-minute record with its physics model.</li></ol>
+    </div>
+  </aside>
+</section>
+
+<!-- EVIDENCE -->
+<section id="evidence" class="wrap sec">
+  <div class="sec-head"><h2>Measured against expected</h2>
+    <p>Everything the twin knows comes from comparing sensor data with physics. These are the four views an engineer would watch.</p></div>
+  <div class="grid4">
+    <div class="card"><div class="card-h"><b>Power curve</b><span>10-min records (last 7 days) vs twin curve at today's air density</span></div><canvas id="cPower"></canvas>
+      <div class="card-f" id="fPower"></div></div>
+    <div class="card"><div class="card-h"><b>Residuals</b><span>Power ratio (3-day rolling, partial load) and bearing temperature above twin</span></div><canvas id="cResidA" class="half"></canvas><canvas id="cResidB" class="half"></canvas>
+      <div class="card-f" id="fResid"></div></div>
+    <div class="card"><div class="card-h"><b>Drivetrain vibration spectrum</b><span>High-speed-shaft bearing, live, 0 to 200 Hz</span></div><canvas id="cSpec"></canvas>
+      <div class="card-f" id="fSpec"></div></div>
+    <div class="card"><div class="card-h"><b>Tower fatigue life</b><span>Damage accumulated (Miner's rule) and projected life</span></div><canvas id="cLife"></canvas>
+      <div class="card-f" id="fLife"></div></div>
+  </div>
+</section>
+
+<!-- ECOSYSTEM -->
+<section id="ecosystem" class="wrap sec">
+  <div class="sec-head"><h2>A twin is only as useful as the ecosystem around it</h2>
+    <p>The physics model alone does nothing. Value appears when sensors, data, the model, analytics and people who can act are connected in a loop that returns to the physical turbine.</p></div>
+  <div class="eco">
+    <svg id="ecoSvg" viewBox="0 0 1100 330" role="img" aria-label="Digital twin ecosystem loop"></svg>
+  </div>
+  <div class="grid3 eco-cards">
+    <div class="card"><div class="kicker">Inside the loop</div><p>SCADA (10-minute averages of about 40 signals), vibration monitoring at high sampling rate, strain gauges, weather forecasts and maintenance history flow into one data platform. The physics twin turns every record into an <i>expected</i> value; analytics watch the residuals.</p></div>
+    <div class="card"><div class="kicker">Around the loop</div><p>The manufacturer's service team, crane and logistics providers, spare-parts suppliers, the grid and power market, insurers and the owner's asset managers all use the same twin. A bearing warning becomes a parts order, a crane booking and a low-wind repair window.</p></div>
+    <div class="card"><div class="kicker">Across the fleet</div><p>One twin learns from one turbine. A fleet of twins compares similar machines, so a pattern seen on one unit becomes an early check on all of them. This is where a digital twin ecosystem compounds its value.</p></div>
+  </div>
+</section>
+
+<!-- VALUE -->
+<section id="value" class="wrap sec">
+  <div class="sec-head"><h2>What the ecosystem is worth</h2>
+    <p>Values come from the simulation runs above and from assumptions you can change. Run a scenario to replace the default estimate with the result the twin achieved.</p></div>
+  <div class="value-grid">
+    <div class="card assumptions">
+      <div class="kicker">Assumptions</div>
+      <label>Electricity price <output id="oPrice"></output><input type="range" id="aPrice" min="20" max="150" step="5" value="55"></label>
+      <label>Turbines in the fleet <output id="oFleet"></output><input type="range" id="aFleet" min="1" max="200" step="1" value="40"></label>
+      <label>Gearbox bearing failures per turbine-year <output id="oFail"></output><input type="range" id="aFail" min="0.01" max="0.15" step="0.01" value="0.05"></label>
+      <label>Share of turbines with yaw misalignment <output id="oYaw"></output><input type="range" id="aYaw" min="0" max="0.6" step="0.05" value="0.25"></label>
+      <label>Icing days per year <output id="oIce"></output><input type="range" id="aIce" min="0" max="30" step="1" value="8"></label>
+      <label>Share of turbines in a wake sector <output id="oWake"></output><input type="range" id="aWake" min="0" max="0.8" step="0.05" value="0.3"></label>
+      <label>Twin ecosystem cost per turbine-year <output id="oCost"></output><input type="range" id="aCost" min="1000" max="20000" step="500" value="6000"></label>
+    </div>
+    <div class="card">
+      <table class="vt" id="valueTable"></table>
+      <div class="totals" id="totals"></div>
+    </div>
+  </div>
+</section>
+
+<!-- METHOD -->
+<section id="method" class="wrap sec">
+  <div class="sec-head"><h2>How the physics works</h2>
+    <p>Every number on this page is computed in the browser from the equations below. The turbine and its data are simulated; the parameters are those of a real, published reference turbine.</p></div>
+  <div class="grid2">
+    <div class="card method">
+      <h3>Turbine and aerodynamics</h3>
+      <p>NREL 5 MW reference turbine, land-based: rotor radius 63 m, hub height 90 m, rated 5 MW at 11.4 m/s and 12.1 rpm, gearbox 97:1, generator efficiency 94.4 %. Blade geometry uses the published chord and twist at 17 stations.</p>
+      <p class="eq">P = ½ ρ A U³ C<sub>p</sub>(λ, β) · η,&nbsp;&nbsp; λ = ωR / U</p>
+      <p>C<sub>p</sub>(λ, β) is Heier's empirical surface scaled to the rotor's optimum (C<sub>p</sub> 0.482 at λ 7.55); pitch is mapped so that steady-state pitch angles reproduce the NREL table (3.8° at 12 m/s, 10.5° at 15 m/s, 23.5° at 25 m/s). Thrust follows from momentum theory, giving about 780 kN at rated wind.</p>
+      <h3>Control and dynamics</h3>
+      <p class="eq">J dω/dt = Q<sub>aero</sub> − N·Q<sub>gen</sub>,&nbsp;&nbsp; m ẍ + c ẋ + k x = F<sub>thrust</sub>(U − ẋ)</p>
+      <p>Below rated, generator torque tracks the optimum (Q = Kω²); above rated, a gain-scheduled PI pitch controller with the NREL baseline gains holds 12.1 rpm, limited to 8°/s. The tower's first fore-aft mode (0.32 Hz, 1 % damping) is driven by thrust, with aerodynamic damping from the relative wind. Turbulence is an Ornstein-Uhlenbeck process with the IEC Kaimal length scale (340 m).</p>
+    </div>
+    <div class="card method">
+      <h3>From records to decisions</h3>
+      <p>Every 10 minutes the simulated turbine produces a SCADA record with sensor noise. The twin evaluates the same physics with the measured wind and air density, assuming a healthy, aligned and clean rotor. Residuals feed simple, explainable detectors:</p>
+      <ul>
+        <li><b>Bearing:</b> bearing-defect frequency in the vibration envelope, then an EWMA of the temperature residual; an exponential fit gives remaining life and the repair is placed in the lowest-wind window of the forecast.</li>
+        <li><b>Yaw:</b> rolling 3-day power ratio in partial load; a deficit with a 5-sigma margin is converted into an angle via the cos² law.</li>
+        <li><b>Icing:</b> power residual below 85 % at sub-zero temperature triggers blade heating instead of a stop.</li>
+        <li><b>Fatigue:</b> tower-base damage-equivalent load from thrust variance under turbulence, Wöhler exponent 4, accumulated with Miner's rule and calibrated to a 20-year design life.</li>
+      </ul>
+      <h3>References</h3>
+      <ol class="refs">
+        <li>Jonkman, J., Butterfield, S., Musial, W., &amp; Scott, G. (2009). <i>Definition of a 5-MW reference wind turbine for offshore system development</i> (NREL/TP-500-38060). National Renewable Energy Laboratory.</li>
+        <li>Heier, S. (2014). <i>Grid integration of wind energy</i> (3rd ed.). Wiley.</li>
+        <li>Burton, T., Jenkins, N., Sharpe, D., &amp; Bossanyi, E. (2011). <i>Wind energy handbook</i> (2nd ed.). Wiley.</li>
+        <li>Grieves, M., &amp; Vickers, J. (2017). Digital twin: Mitigating unpredictable, undesirable emergent behavior in complex systems. In F.-J. Kahlen, S. Flumerfelt, &amp; A. Alves (Eds.), <i>Transdisciplinary perspectives on complex systems</i> (pp. 85–113). Springer.</li>
+      </ol>
+      <p class="muted small">Costs, failure rates and icing days are illustrative assumptions for a Nordic onshore fleet, not measured data.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap foot">
+  <div>
+    <b>Rajan Kumar V K</b>, D.Sc. (Tech.), Industrial Engineering and Management. Doctoral research on performance management with digital twins, AI and IoT in industrial companies.
+  </div>
+  <div class="links">
+    <a href="https://github.com/Rajan56/turbine-digital-twin">Source on GitHub</a>
+    <a href="https://rajan56.github.io/margin-recovery-case/">Margin Recovery Case</a>
+    <a href="https://www.linkedin.com/in/rajan-kumar-v-k-0a541799/">LinkedIn</a>
+  </div>
+</footer>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
